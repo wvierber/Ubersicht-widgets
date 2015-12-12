@@ -1,10 +1,8 @@
-# Original script from @mence
-# In order to work, I had to make a copy of my todo.cfg and place it in .todo/config
+# Inspired by @mence's Todo.txt Widget
 
-command: "/usr/local/Cellar/todo-txt/2.10/bin/todo.sh ls | grep -v TODO | grep -v '^--' "
-# todo list priorities in no-color without context or project
-# grep inverse match TODO (remove)
-# grep inverse match start of string with -- (remove)
+command: "/usr/local/Cellar/todo-txt/2.10/bin/todo.sh -d $HOME/Dropbox/todo/todo.cfg -p projectview | tail -n +3"
+# todo list by projectview
+# remove first two lines
 
 refreshFrequency: 100000 # ms
 
@@ -38,29 +36,34 @@ style: """
     font-size 12px
     font-weight bold
     color: rgba(#fff, .9)
+    margin-top: 2px;
 """
 
-render: -> """
+renderProj: (proj) -> """
   <div class="container">
-    <div class="widget-title">todo.txt</div>
-    <div id="todos" class="list">
-    </div>
+    <div class="widget-title">#{proj}</div>
+  </div>
+"""
+
+renderTodo: (todo) -> """
+  <div class="container">
+    <div class="list-item">#{todo}</div>
   </div>
 """
 
 update: (output, domElement) ->
 
-  domElement.innerHTML = '<div class="container"><div class="widget-title">todo.txt</div><div id="todos" class="list"></div></div>'
+  projs = output.split('---')
 
-  todos = output.split('\n')
-  list = $(domElement).find('#todos')
+  $(domElement).html ''
 
-  addTodo = (todo) ->
-    item = "<div class=\"list-item\">#{todo}</div>"
-    list.append item
-
-  if todos.length == 1
-    addTodo "Nothing urgent."
+  if projs.length == 1
+    $(domElement).append @renderTodo("Nothing urgent.")
   else
-    for todo, i in todos
-      addTodo todo
+    for proj in projs
+      for todo in proj.split('\n')
+        c = todo.charAt(0)
+        if  (c >= '0' && c <= '9')
+          $(domElement).append @renderTodo(todo)
+        else
+          $(domElement).append @renderProj(todo)
